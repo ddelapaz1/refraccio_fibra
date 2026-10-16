@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reflexión total interna</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a column — controls, a dark to-scale fiber stage, live readouts, then two explanatory charts side by side. Tokens follow index.html. */
+:root{--text:#2C2C2B;--muted:#6B6863;--bg:#F9F8F7;--surface:#FFFFFF;--surface2:#F0EFED;--border:#E6E5E3;--accent:#2783DE;--accentSoft:#E5F2FC;--onAccent:#fff;--red:#C9372C;--redSoft:#FCE9E7;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--text:#fff;--muted:rgba(255,255,255,.68);--bg:#191919;--surface:#202020;--surface2:#2C2C2B;--border:rgba(255,255,255,.18);--accent:#5E9FE8;--accentSoft:rgba(94,159,232,.14);--onAccent:#0B1A2B;--red:#E97366;--redSoft:rgba(233,115,102,.12);color-scheme:dark}}
+:root[data-theme="dark"]{--text:#fff;--muted:rgba(255,255,255,.68);--bg:#191919;--surface:#202020;--surface2:#2C2C2B;--border:rgba(255,255,255,.18);--accent:#5E9FE8;--accentSoft:rgba(94,159,232,.14);--onAccent:#0B1A2B;--red:#E97366;--redSoft:rgba(233,115,102,.12);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 var(--sans);background:var(--bg);color:var(--text)}
+.wrap{max-width:1120px;margin:0 auto;padding-block:24px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:8px}
+h1{font-size:28px;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.badge{font-size:14px;font-weight:600;color:var(--accent);background:var(--accentSoft);padding:4px 10px;border-radius:6px}
+.lede{margin:0 0 16px;color:var(--muted);max-width:70ch}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.group{display:flex;flex-direction:column;gap:6px;min-width:0}
+.glabel{font-size:14px;font-weight:600;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--surface2);border-radius:10px;padding:4px;gap:4px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{min-height:44px;padding:0 14px;display:flex;align-items:center;border-radius:8px;cursor:pointer;font-weight:600;font-size:15px;color:var(--muted);user-select:none}
+.seg input:checked + label{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06)}
+.seg input:focus-visible + label{outline:3px solid var(--accent);outline-offset:1px}
+.slider{display:flex;align-items:center;gap:10px;min-height:44px}
+.slider input{width:220px;max-width:100%;accent-color:var(--accent);height:28px}
+.slider output{min-width:3.6em;font-weight:700;font-variant-numeric:tabular-nums}
+.slider.small input{width:110px}
+.gnote{font-size:13px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-weight:600;font-size:15px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+button:hover{background:var(--surface2)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--onAccent);min-width:116px}
+button.primary:hover{filter:brightness(1.07);background:var(--accent)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stage{position:relative;border-radius:12px;overflow:hidden;background:#0B1119;border:1px solid #0B1119}
+.stage canvas{display:block;width:100%;aspect-ratio:1200/540}
+.stagecap{font-size:14px;color:var(--muted);margin:8px 2px 0}
+.readouts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.4fr);gap:12px;margin:16px 0}
+.ro{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;min-width:0}
+.ro .k{font-size:13px;font-weight:600;color:var(--muted)}
+.ro .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.25;white-space:nowrap}
+.ro .s{font-size:13px;color:var(--muted)}
+.state{display:flex;flex-direction:column;gap:6px}
+.pill{align-self:flex-start;font-size:14px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--accentSoft);color:var(--accent)}
+.pill.leak{background:var(--redSoft);color:var(--red)}
+.state p{margin:0;font-size:14px}
+.facts{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:14px;color:var(--muted);margin:-4px 2px 16px}
+.facts b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;min-width:0}
+h2{font-size:19px;line-height:1.3;margin:0 0 6px;text-wrap:balance}
+.card p{margin:0 0 10px;font-size:15px;max-width:65ch}
+.card canvas{display:block;width:100%;aspect-ratio:560/250;margin:4px 0 8px}
+.cap{font-size:14px;color:var(--muted);margin:0}
+.explain{margin-top:16px}
+.explain ol{margin:8px 0 0;padding-left:22px;display:grid;gap:8px;max-width:75ch}
+.explain li{font-size:15px}
+.explain .f{font-family:var(--mono);font-size:14px;background:var(--surface2);padding:1px 6px;border-radius:4px;white-space:nowrap}
+@media (max-width:900px){.readouts{grid-template-columns:repeat(2,minmax(0,1fr))}.readouts .state{grid-column:1/-1}.grid{grid-template-columns:1fr}}
+@media (max-width:420px){h1{font-size:23px}.ro .v{font-size:20px}.slider input{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Reflexión total interna en una fibra monomodo</h1>
+    <span class="badge">λ = 1550 nm</span>
+  </header>
+  <p class="lede">La luz entra por la cara de la fibra, se refracta y rebota en la frontera entre el núcleo y el revestimiento. Mientras el ángulo de incidencia supere el ángulo crítico, la reflexión es total y la luz no escapa. Mueve el ángulo de entrada para salir del cono de aceptación y ver cómo empieza a fugarse.</p>
+
+  <div class="controls">
+    <div class="group">
+      <span class="glabel" id="presetLbl">Índices de refracción</span>
+      <div class="seg" role="radiogroup" aria-labelledby="presetLbl">
+        <input type="radio" name="preset" id="pReal" value="real" checked><label for="pReal">SMF‑28 real</label>
+        <input type="radio" name="preset" id="pDida" value="dida"><label for="pDida">Contraste exagerado</label>
+      </div>
+    </div>
+    <div class="group">
+      <label class="glabel" for="theta0">Ángulo de entrada θ₀ (en el aire)</label>
+      <div class="slider"><input type="range" id="theta0" min="0" max="45" step="0.1" value="5"><output id="theta0Out" for="theta0">5,0°</output></div>
+      <span class="gnote" id="accNote">Aceptación máxima: 7,2°</span>
+    </div>
+    <div class="group">
+      <span class="glabel">Animación</span>
+      <div class="row">
+        <button class="primary" id="play" type="button">Pausar</button>
+        <div class="slider small"><label class="gnote" for="speed">Velocidad</label><input type="range" id="speed" min="0.25" max="2" step="0.25" value="1"><output id="speedOut" for="speed">1×</output></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage"><canvas id="fiber" width="1200" height="540" aria-label="Corte longitudinal de la fibra con el rayo de luz rebotando entre núcleo y revestimiento"></canvas></div>
+  <p class="stagecap" id="stageCap"></p>
+
+  <div class="readouts">
+    <div class="ro"><div class="k">Entrada θ₀</div><div class="v" id="rTh0">5,0°</div><div class="s">respecto al eje, en el aire</div></div>
+    <div class="ro"><div class="k">En el núcleo θ₁</div><div class="v" id="rTh1">–</div><div class="s">tras refractarse en la cara</div></div>
+    <div class="ro"><div class="k">Incidencia θᵢ</div><div class="v" id="rThi">–</div><div class="s">respecto a la normal</div></div>
+    <div class="ro"><div class="k">Ángulo crítico θc</div><div class="v" id="rThc">–</div><div class="s">arcsen(n₂ / n₁)</div></div>
+    <div class="ro state"><span class="pill" id="pill">Reflexión total interna</span><p id="stateTxt"></p></div>
+  </div>
+  <div class="facts" id="facts"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Cuánta luz se refleja en cada rebote</h2>
+      <p>Reflectancia de Fresnel en la frontera núcleo–revestimiento (luz no polarizada). Por debajo de θc parte de la luz pasa al revestimiento; a partir de θc se refleja el 100 %.</p>
+      <canvas id="rChart" width="560" height="250" aria-label="Gráfica de reflectancia frente al ángulo de incidencia"></canvas>
+      <p class="cap" id="rCap"></p>
+    </div>
+    <div class="card">
+      <h2>Por qué solo viaja un modo</h2>
+      <p>Con un núcleo de 8,2 µm y una diferencia de índices tan pequeña, la frecuencia normalizada V queda por debajo de 2,405 y la fibra solo guía el modo fundamental LP₀₁.</p>
+      <canvas id="mChart" width="560" height="250" aria-label="Perfil de índice y distribución de intensidad del modo fundamental"></canvas>
+      <p class="cap" id="mCap"></p>
+    </div>
+  </div>
+
+  <div class="card explain">
+    <h2>Qué estás viendo</h2>
+    <ol>
+      <li><b>Refracción en la entrada.</b> Al pasar del aire al vidrio el rayo se acerca al eje: <span class="f">n₀·sen θ₀ = n₁·sen θ₁</span>.</li>
+      <li><b>Ángulo crítico.</b> En la frontera con el revestimiento, de índice menor, existe un ángulo <span class="f">θc = arcsen(n₂/n₁)</span>. Si <span class="f">θᵢ ≥ θc</span>, no hay rayo refractado y toda la luz vuelve al núcleo.</li>
+      <li><b>Cono de aceptación.</b> Solo la luz que entra con <span class="f">sen θ₀ ≤ AN = √(n₁² − n₂²)</span> cumple la condición en todos los rebotes. En una SMF‑28 eso son unos 7°.</li>
+      <li><b>Onda evanescente.</b> Aunque la reflexión sea total, el campo penetra unas micras en el revestimiento y decae exponencialmente. El brillo bajo cada rebote está dibujado con esa profundidad real.</li>
+      <li><b>El modelo de rayos es una aproximación.</b> En una fibra monomodo el núcleo mide solo unas pocas longitudes de onda, así que la luz se comporta como un único modo con forma casi gaussiana. Los rayos explican la condición de guiado; el perfil del modo explica por qué no hay dispersión modal.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LAMBDA = 1.55;      // µm
+  const CORE_R = 4.1;       // µm, radio del núcleo SMF-28
+  const W = 1200, H = 540, Y0 = 270, FX = 170, TRAIL = 150, SPACING = 620, V_PX = 260;
+  const PRESETS = {
+    real: { n1: 1.4682, n2: 1.4629, a: 15, b: 15 * 62.5 / CORE_R, th0: 5,  toScale: true },
+    dida: { n1: 1.50,   n2: 1.40,   a: 62, b: 205,                th0: 20, toScale: false }
+  };
+  const DEG = Math.PI / 180;
+  const fmt = (v, d) => v.toFixed(d).replace('.', ',');
+  const $ = id => document.getElementById(id);
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let preset = 'real', P = PRESETS.real, th0 = 5, speed = 1, playing = !reduce;
+  let tSim = 3.2, last = null, M = null, path = null;
+
+  function fresnelR(n1, n2, thi){
+    const ci = Math.cos(thi), st = n1 / n2 * Math.sin(thi);
+    if (st >= 1) return 1;
+    const ct = Math.sqrt(1 - st * st);
+    const rs = (n1 * ci - n2 * ct) / (n1 * ci + n2 * ct);
+    const rp = (n2 * ci - n1 * ct) / (n2 * ci + n1 * ct);
+    return (rs * rs + rp * rp) / 2;
+  }
+
+  function compute(){
+    const { n1, n2 } = P;
+    const NA = Math.sqrt(n1 * n1 - n2 * n2);
+    const thA = Math.asin(Math.min(1, NA));
+    const th0r = th0 * DEG;
+    const th1 = Math.asin(Math.sin(th0r) / n1);
+    const thi = Math.PI / 2 - th1;
+    const thc = Math.asin(n2 / n1);
+    const tir = thi >= thc;
+    const R = fresnelR(n1, n2, thi);
+    const V = 2 * Math.PI * CORE_R / LAMBDA * NA;
+    const k = n1 * n1 * Math.sin(thi) ** 2 - n2 * n2;
+    const dPen = k > 0 ? LAMBDA / (2 * Math.PI * Math.sqrt(k)) : Infinity;
+    const w = CORE_R * (0.65 + 1.619 * V ** -1.5 + 2.879 * V ** -6);
+    const cladFrac = Math.exp(-2 * CORE_R * CORE_R / (w * w));
+    M = { n1, n2, NA, thA, th0r, th1, thi, thc, tir, R, V, dPen, w, cladFrac, pxPerUm: P.a / CORE_R };
+  }
+
+  function buildPath(){
+    const segs = [], bounces = [];
+    const { th0r, th1, thi, tir, R, n1, n2 } = M;
+    const a = P.a, b = P.b;
+    const L = (FX - 24) / Math.cos(th0r);
+    const sx = FX - L * Math.cos(th0r), sy = Y0 - L * Math.sin(th0r);
+    segs.push({ x0: sx, y0: sy, x1: FX, y1: Y0, s0: 0, len: L, I: 1, kind: 'air' });
+    let s = L, x = FX, y = 0, dy = 1, I = 1;
+    const XEND = W + 40;
+    if (th1 < 1e-6){
+      segs.push({ x0: FX, y0: Y0, x1: XEND, y1: Y0, s0: s, len: XEND - FX, I, kind: 'core' });
+    } else {
+      const thT = tir ? 0 : Math.asin(n1 * Math.sin(thi) / n2);
+      for (let guard = 0; guard < 400; guard++){
+        const target = dy > 0 ? a : -a;
+        let l = Math.abs(target - y) / Math.sin(th1);
+        let x1 = x + l * Math.cos(th1);
+        if (x1 > XEND){
+          l = (XEND - x) / Math.cos(th1);
+          segs.push({ x0: x, y0: Y0 + y, x1: XEND, y1: Y0 + y + dy * l * Math.sin(th1), s0: s, len: l, I, kind: 'core' });
+          break;
+        }
+        segs.push({ x0: x, y0: Y0 + y, x1, y1: Y0 + target, s0: s, len: l, I, kind: 'core' });
+        s += l;
+        bounces.push({ x: x1, y: Y0 + target, side: dy, s, I });
+        if (!tir){
+          const lt = (b - a) / Math.cos(thT);
+          segs.push({ x0: x1, y0: Y0 + target, x1: x1 + lt * Math.sin(thT), y1: Y0 + target + dy * lt * Math.cos(thT), s0: s, len: lt, I: I * (1 - R), kind: 'leak' });
+          I *= R;
+          if (I < 0.006) break;
+        }
+        x = x1; y = target; dy = -dy;
+      }
+    }
+    let total = 0;
+    for (const g of segs) total = Math.max(total, g.s0 + g.len);
+    path = { segs, bounces, total };
+  }
+
+  /* ---------- Fiber stage ---------- */
+  const cv = $('fiber'), cx = cv.getContext('2d');
+  function sizeCanvas(c, w, h){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function headPositions(){
+    const front = tSim * V_PX, out = [];
+    const kMax = Math.floor(front / SPACING);
+    for (let k = kMax; k >= 0; k--){
+      const h = front - k * SPACING;
+      if (h > path.total + TRAIL) break;
+      out.push(h);
+    }
+    return out;
+  }
+
+  function lightRGBA(al){ return `rgba(255,70,58,${al})`; }
+
+  function drawFiber(){
+    const a = P.a, b = P.b;
+    cx.clearRect(0, 0, W, H);
+    cx.fillStyle = '#0B1119'; cx.fillRect(0, 0, W, H);
+    // coating outside cladding
+    cx.fillStyle = '#151B24';
+    cx.fillRect(FX, 0, W - FX, Y0 - b); cx.fillRect(FX, Y0 + b, W - FX, H - Y0 - b);
+    // cladding
+    cx.fillStyle = '#12263A'; cx.fillRect(FX, Y0 - b, W - FX, 2 * b);
+    // core
+    const g = cx.createLinearGradient(0, Y0 - a, 0, Y0 + a);
+    g.addColorStop(0, '#2A5E8F'); g.addColorStop(.5, '#3A78B2'); g.addColorStop(1, '#2A5E8F');
+    cx.fillStyle = g; cx.fillRect(FX, Y0 - a, W - FX, 2 * a);
+    cx.strokeStyle = '#9CCBF2'; cx.lineWidth = 1;
+    cx.beginPath(); cx.moveTo(FX, Y0 - a + .5); cx.lineTo(W, Y0 - a + .5); cx.moveTo(FX, Y0 + a - .5); cx.lineTo(W, Y0 + a - .5); cx.stroke();
+    cx.strokeStyle = '#4F7398';
+    cx.beginPath(); cx.moveTo(FX, Y0 - b + .5); cx.lineTo(W, Y0 - b + .5); cx.moveTo(FX, Y0 + b - .5); cx.lineTo(W, Y0 + b - .5); cx.stroke();
+    // end face
+    cx.strokeStyle = '#7FA6CC'; cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(FX, Y0 - b); cx.lineTo(FX, Y0 + b); cx.stroke();
+    // axis
+    cx.setLineDash([3, 6]); cx.strokeStyle = 'rgba(255,255,255,.18)'; cx.lineWidth = 1;
+    cx.beginPath(); cx.moveTo(24, Y0); cx.lineTo(W, Y0); cx.stroke(); cx.setLineDash([]);
+
+    // acceptance cone
+    const ca = M.thA, Lc = FX - 30;
+    cx.fillStyle = 'rgba(156,203,242,.07)';
+    cx.beginPath(); cx.moveTo(FX, Y0);
+    cx.lineTo(FX - Lc, Y0 - Lc * Math.tan(ca)); cx.lineTo(FX - Lc, Y0 + Lc * Math.tan(ca)); cx.closePath(); cx.fill();
+    cx.setLineDash([5, 5]); cx.strokeStyle = 'rgba(156,203,242,.55)';
+    cx.beginPath(); cx.moveTo(FX, Y0); cx.lineTo(FX - Lc, Y0 - Lc * Math.tan(ca)); cx.moveTo(FX, Y0); cx.lineTo(FX - Lc, Y0 + Lc * Math.tan(ca)); cx.stroke();
+    cx.setLineDash([]);
+  }
+
+  function drawEvanescent(heads){
+    if (!M.tir || !isFinite(M.dPen)) return;
+    const depth = Math.min(M.dPen * M.pxPerUm * 3, P.b - P.a);
+    for (const bc of path.bounces){
+      let boost = 0;
+      for (const h of heads) boost = Math.max(boost, Math.exp(-(((h - bc.s) / 55) ** 2)));
+      const al = (0.28 + 0.6 * boost) * bc.I;
+      cx.save();
+      cx.beginPath();
+      if (bc.side > 0) cx.rect(bc.x - 70, bc.y, 140, depth + 2); else cx.rect(bc.x - 70, bc.y - depth - 2, 140, depth + 2);
+      cx.clip();
+      const gr = cx.createLinearGradient(0, bc.y, 0, bc.y + bc.side * depth);
+      gr.addColorStop(0, lightRGBA(al)); gr.addColorStop(.33, lightRGBA(al * .14)); gr.addColorStop(1, lightRGBA(0));
+      cx.fillStyle = gr;
+      cx.beginPath(); cx.ellipse(bc.x, bc.y, 60, depth + 2, 0, 0, Math.PI * 2); cx.fill();
+      cx.restore();
+    }
+  }
+
+  function ptAt(g, s){ const t = (s - g.s0) / g.len; return [g.x0 + (g.x1 - g.x0) * t, g.y0 + (g.y1 - g.y0) * t]; }
+
+  function drawStaticPath(){
+    cx.lineCap = 'round';
+    for (const g of path.segs){
+      cx.strokeStyle = lightRGBA(0.10 + 0.22 * g.I);
+      cx.lineWidth = g.kind === 'leak' ? 1.5 : 1.8;
+      cx.beginPath(); cx.moveTo(g.x0, g.y0); cx.lineTo(g.x1, g.y1); cx.stroke();
+    }
+  }
+
+  function drawPulses(heads){
+    cx.lineCap = 'round';
+    cx.shadowColor = 'rgba(255,60,48,.9)'; cx.shadowBlur = 12;
+    for (const h of heads){
+      for (const g of path.segs){
+        const s0 = Math.max(g.s0, h - TRAIL), s1 = Math.min(g.s0 + g.len, h);
+        if (s1 <= s0) continue;
+        const [xa, ya] = ptAt(g, s0), [xb, yb] = ptAt(g, s1);
+        const aa = g.I * (1 - (h - s0) / TRAIL), ab = g.I * (1 - (h - s1) / TRAIL);
+        const gr = cx.createLinearGradient(xa, ya, xb, yb);
+        gr.addColorStop(0, lightRGBA(aa)); gr.addColorStop(1, lightRGBA(ab));
+        cx.strokeStyle = gr; cx.lineWidth = 3.2;
+        cx.beginPath(); cx.moveTo(xa, ya); cx.lineTo(xb, yb); cx.stroke();
+        if (h >= g.s0 && h <= g.s0 + g.len){
+          const [hx, hy] = ptAt(g, h);
+          cx.fillStyle = `rgba(255,214,210,${Math.max(.15, g.I)})`;
+          cx.beginPath(); cx.arc(hx, hy, 3.6, 0, Math.PI * 2); cx.fill();
+        }
+      }
+    }
+    cx.shadowBlur = 0;
+  }
+
+  function label(t, x, y, opt = {}){
+    cx.font = `${opt.weight || 600} ${opt.size || 15}px ${getComputedStyle(document.body).fontFamily}`;
+    cx.textAlign = opt.align || 'left'; cx.textBaseline = opt.base || 'alphabetic';
+    cx.fillStyle = opt.color || 'rgba(230,240,250,.9)';
+    cx.fillText(t, x, y);
+  }
+
+  function drawAnnotations(){
+    const a = P.a, b = P.b;
+    label('Aire · n₀ = 1,000', 24, 32);
+    label('Cono de aceptación ±' + fmt(M.thA / DEG, 1) + '°', 24, Y0 - (FX - 30) * Math.tan(M.thA) - 12 < 50 ? 56 : Y0 - (FX - 30) * Math.tan(M.thA) - 12, { size: 13, weight: 500, color: 'rgba(156,203,242,.9)' });
+    label('Revestimiento · n₂ = ' + fmt(M.n2, 4), W - 20, Y0 - b + 26, { align: 'right' });
+    label('Núcleo · n₁ = ' + fmt(M.n1, 4), W - 20, Y0 - a - 10, { align: 'right', color: '#CFE6FB' });
+    label('Recubrimiento', W - 20, Y0 + b + 24, { align: 'right', size: 13, weight: 500, color: 'rgba(230,240,250,.5)' });
+
+    // first bounce: normal, θi arc, critical ray
+    const bc = path.bounces[0];
+    if (bc && bc.x < W - 90){
+      const n = -bc.side; // normal into the core (canvas y)
+      cx.setLineDash([4, 4]); cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = 1;
+      cx.beginPath(); cx.moveTo(bc.x, bc.y + n * 95); cx.lineTo(bc.x, bc.y - n * 40); cx.stroke();
+      // critical-angle ray (backwards, into the core side)
+      const cA = bc.side > 0 ? -(Math.PI / 2 + M.thc) : (Math.PI / 2 + M.thc);
+      cx.strokeStyle = 'rgba(255,214,120,.8)';
+      cx.beginPath(); cx.moveTo(bc.x, bc.y); cx.lineTo(bc.x + 120 * Math.cos(cA), bc.y + 120 * Math.sin(cA)); cx.stroke();
+      cx.setLineDash([]);
+      // θi arc
+      const nA = bc.side > 0 ? -Math.PI / 2 : Math.PI / 2;
+      const iA = bc.side > 0 ? -(Math.PI - M.th1) : (Math.PI - M.th1);
+      cx.strokeStyle = 'rgba(255,255,255,.85)'; cx.lineWidth = 1.5;
+      cx.beginPath(); cx.arc(bc.x, bc.y, 58, nA, iA, bc.side > 0); cx.stroke();
+      const mid = (nA + iA) / 2;
+      label('θᵢ', bc.x + 76 * Math.cos(mid), bc.y + 76 * Math.sin(mid) + 5, { align: 'center', size: 16, color: '#fff' });
+      label('θc', bc.x + 132 * Math.cos(cA), bc.y + 132 * Math.sin(cA) + (bc.side > 0 ? -4 : 14), { align: 'center', size: 14, color: 'rgba(255,214,120,.95)' });
+      label('normal', bc.x + 6, bc.y + n * 95 + (n < 0 ? 12 : -2), { size: 12, weight: 500, color: 'rgba(255,255,255,.6)' });
+    }
+
+    if (P.toScale){
+      const len = 50 * M.pxPerUm, x0 = FX + 20, x1 = x0 + len, y = H - 12;
+      cx.strokeStyle = 'rgba(230,240,250,.8)'; cx.lineWidth = 2;
+      cx.beginPath(); cx.moveTo(x0, y - 5); cx.lineTo(x0, y); cx.lineTo(x1, y); cx.lineTo(x1, y - 5); cx.stroke();
+      label('50 µm', (x0 + x1) / 2, y - 8, { align: 'center', size: 13 });
+    }
+  }
+
+  function render(){
+    const heads = headPositions();
+    drawFiber();
+    drawEvanescent(heads);
+    drawStaticPath();
+    drawPulses(heads);
+    drawAnnotations();
+  }
+
+  /* ---------- Charts ---------- */
+  function tok(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  const rc = $('rChart'), rx = rc.getContext('2d');
+  const mc = $('mChart'), mx = mc.getContext('2d');
+  const CW = 560, CH = 250, PAD = { l: 46, r: 28, t: 16, b: 38 };
+
+  function axes(ctx, xTicks, xFmt, yTicks, yFmt, xs, ys){
+    const ff = getComputedStyle(document.body).fontFamily;
+    ctx.font = `13px ${ff}`; ctx.lineWidth = 1;
+    ctx.strokeStyle = tok('--border'); ctx.fillStyle = tok('--muted');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (const v of yTicks){
+      const y = ys(v);
+      ctx.beginPath(); ctx.moveTo(PAD.l, y + .5); ctx.lineTo(CW - PAD.r, y + .5); ctx.stroke();
+      ctx.fillText(yFmt(v), PAD.l - 8, y);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (const v of xTicks) ctx.fillText(xFmt(v), xs(v), CH - PAD.b + 8);
+  }
+
+  function drawR(){
+    rx.clearRect(0, 0, CW, CH);
+    const thcD = M.thc / DEG, thiD = M.thi / DEG;
+    const lo = Math.max(0, Math.floor((thcD - (preset === 'real' ? 10 : 25)) / 2) * 2), hi = 90;
+    const step = hi - lo <= 20 ? 2 : 5;
+    const xs = v => PAD.l + (v - lo) / (hi - lo) * (CW - PAD.l - PAD.r);
+    const ys = v => CH - PAD.b - v * (CH - PAD.t - PAD.b);
+    const xt = []; for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) xt.push(v);
+    axes(rx, xt, v => v + '°', [0, .25, .5, .75, 1], v => Math.round(v * 100) + ' %', xs, ys);
+    // TIR region
+    rx.fillStyle = tok('--accentSoft');
+    rx.fillRect(xs(thcD), PAD.t, xs(hi) - xs(thcD), CH - PAD.t - PAD.b);
+    rx.fillStyle = tok('--accent'); rx.font = `600 12px ${getComputedStyle(document.body).fontFamily}`;
+    rx.textAlign = 'right'; rx.textBaseline = 'top';
+    rx.fillText('reflexión total', xs(hi) - 6, PAD.t + 4);
+    // θc
+    rx.setLineDash([4, 4]); rx.strokeStyle = tok('--muted');
+    rx.beginPath(); rx.moveTo(xs(thcD), PAD.t); rx.lineTo(xs(thcD), CH - PAD.b); rx.stroke(); rx.setLineDash([]);
+    rx.fillStyle = tok('--muted'); rx.textAlign = 'right';
+    rx.fillText('θc ' + fmt(thcD, 2) + '°', xs(thcD) - 6, PAD.t + 4);
+    // curve
+    rx.strokeStyle = tok('--text'); rx.lineWidth = 2; rx.beginPath();
+    for (let i = 0; i <= 400; i++){
+      const v = lo + (hi - lo) * i / 400;
+      const r = fresnelR(M.n1, M.n2, v * DEG);
+      i ? rx.lineTo(xs(v), ys(r)) : rx.moveTo(xs(v), ys(r));
+    }
+    rx.stroke();
+    // current point
+    const cv2 = Math.max(lo, thiD), cr = fresnelR(M.n1, M.n2, cv2 * DEG);
+    const col = M.tir ? tok('--accent') : tok('--red');
+    rx.fillStyle = col; rx.strokeStyle = tok('--surface'); rx.lineWidth = 2;
+    rx.beginPath(); rx.arc(xs(cv2), ys(cr), 6, 0, Math.PI * 2); rx.fill(); rx.stroke();
+    $('rCap').textContent = M.tir
+      ? `Ahora θᵢ = ${fmt(thiD, 2)}°, por encima de θc: cada rebote conserva el 100 % de la luz.`
+      : `Ahora θᵢ = ${fmt(thiD, 2)}°, por debajo de θc: cada rebote refleja el ${fmt(M.R * 100, 1)} % y el resto se pierde en el revestimiento.`;
+  }
+
+  function drawMode(){
+    mx.clearRect(0, 0, CW, CH);
+    const lo = -15, hi = 15;
+    const xs = v => PAD.l + (v - lo) / (hi - lo) * (CW - PAD.l - PAD.r);
+    const ys = v => CH - PAD.b - v * (CH - PAD.t - PAD.b);
+    axes(mx, [-15, -10, -5, 0, 5, 10, 15], v => (v > 0 ? '+' : '') + v + ' µm', [0, .5, 1], v => fmt(v, 1), xs, ys);
+    // core band
+    mx.fillStyle = tok('--accentSoft');
+    mx.fillRect(xs(-CORE_R), PAD.t, xs(CORE_R) - xs(-CORE_R), CH - PAD.t - PAD.b);
+    const ff = getComputedStyle(document.body).fontFamily;
+    mx.font = `600 12px ${ff}`; mx.textAlign = 'center'; mx.textBaseline = 'top';
+    mx.fillStyle = tok('--accent'); mx.fillText('núcleo', xs(0), PAD.t + 4);
+    mx.fillStyle = tok('--muted'); mx.fillText('revestimiento', xs(-10), PAD.t + 4); mx.fillText('revestimiento', xs(10), PAD.t + 4);
+    // index profile (schematic height)
+    const yn1 = ys(.82), yn2 = ys(.62);
+    mx.strokeStyle = tok('--muted'); mx.lineWidth = 1.5; mx.setLineDash([5, 4]);
+    mx.beginPath(); mx.moveTo(xs(lo), yn2); mx.lineTo(xs(-CORE_R), yn2); mx.lineTo(xs(-CORE_R), yn1); mx.lineTo(xs(CORE_R), yn1); mx.lineTo(xs(CORE_R), yn2); mx.lineTo(xs(hi), yn2); mx.stroke();
+    mx.setLineDash([]);
+    mx.textAlign = 'left'; mx.textBaseline = 'bottom'; mx.fillStyle = tok('--muted');
+    mx.fillText('n(r)', xs(CORE_R) + 6, yn1 - 2);
+    const single = M.V < 2.405;
+    // mode intensity
+    mx.strokeStyle = single ? tok('--red') : tok('--muted'); mx.lineWidth = 2.5;
+    if (!single) mx.globalAlpha = .35;
+    mx.beginPath();
+    for (let i = 0; i <= 300; i++){
+      const r = lo + (hi - lo) * i / 300, I = Math.exp(-2 * r * r / (M.w * M.w));
+      i ? mx.lineTo(xs(r), ys(I)) : mx.moveTo(xs(r), ys(I));
+    }
+    mx.stroke();
+    mx.globalAlpha = 1;
+    if (single){
+      mx.fillStyle = tok('--red'); mx.textAlign = 'right'; mx.textBaseline = 'middle';
+      mx.fillText('intensidad |E|²', xs(-M.w) - 6, ys(Math.exp(-2)) );
+    }
+    $('mCap').textContent = single
+      ? `V = ${fmt(M.V, 2)} < 2,405 → monomodo. Diámetro del campo modal ≈ ${fmt(2 * M.w, 1)} µm; el ${fmt(M.cladFrac * 100, 0)} % de la potencia viaja por el revestimiento como onda evanescente.`
+      : `Con este contraste exagerado V = ${fmt(M.V, 1)} > 2,405: la fibra guiaría varios modos. El perfil gaussiano (gris) solo describe la fibra real.`;
+  }
+
+  /* ---------- UI ---------- */
+  function updateUI(){
+    $('theta0Out').textContent = fmt(th0, 1) + '°';
+    $('accNote').textContent = 'Aceptación máxima: ' + fmt(M.thA / DEG, 1) + '°';
+    $('rTh0').textContent = fmt(th0, 1) + '°';
+    $('rTh1').textContent = fmt(M.th1 / DEG, 2) + '°';
+    $('rThi').textContent = fmt(M.thi / DEG, 2) + '°';
+    $('rThc').textContent = fmt(M.thc / DEG, 2) + '°';
+    const pill = $('pill');
+    if (M.tir){
+      pill.textContent = 'Reflexión total interna'; pill.classList.remove('leak');
+      $('stateTxt').textContent = M.th1 < 1e-6
+        ? 'El rayo viaja por el eje sin tocar el revestimiento.'
+        : `θᵢ supera a θc en ${fmt((M.thi - M.thc) / DEG, 2)}°. La luz queda atrapada en el núcleo.`;
+    } else {
+      pill.textContent = 'Fuga al revestimiento'; pill.classList.add('leak');
+      $('stateTxt').textContent = `θ₀ supera la aceptación. Cada rebote solo refleja el ${fmt(M.R * 100, 1)} %; tras ${path.bounces.length} rebotes queda casi nada.`;
+    }
+    const facts = [
+      ['Apertura numérica', fmt(M.NA, 3)],
+      ['Δn', fmt(M.n1 - M.n2, 4)],
+      ['Frecuencia normalizada V', fmt(M.V, 2)],
+      ['Penetración evanescente', M.tir && isFinite(M.dPen) && M.th1 > 1e-6 ? fmt(M.dPen, 2) + ' µm' : '–']
+    ];
+    $('facts').innerHTML = facts.map(([k, v]) => `<span>${k}: <b>${v}</b></span>`).join('');
+    const visUm = (W - FX) / M.pxPerUm;
+    $('stageCap').textContent = P.toScale
+      ? `Corte longitudinal a escala real: núcleo de 8,2 µm, revestimiento de 125 µm y unos ${Math.round(visUm)} µm de longitud. La luz infrarroja se dibuja en rojo.`
+      : 'Diámetros no a escala e índices exagerados para que los ángulos se vean mejor. La luz infrarroja se dibuja en rojo.';
+  }
+
+  function refresh(){
+    compute(); buildPath(); updateUI(); render(); drawR(); drawMode();
+  }
+
+  function setPreset(p){
+    preset = p; P = PRESETS[p];
+    th0 = P.th0; $('theta0').value = th0;
+    refresh();
+  }
+
+  document.querySelectorAll('input[name="preset"]').forEach(r => r.addEventListener('change', e => setPreset(e.target.value)));
+  $('theta0').addEventListener('input', e => { th0 = +e.target.value; refresh(); });
+  $('speed').addEventListener('input', e => { speed = +e.target.value; $('speedOut').textContent = fmt(speed, 2).replace(/,?0+$/, '') + '×'; });
+  const playBtn = $('play');
+  function syncPlay(){ playBtn.textContent = playing ? 'Pausar' : 'Reproducir'; }
+  playBtn.addEventListener('click', () => { playing = !playing; last = null; syncPlay(); });
+  syncPlay();
+
+  function frame(t){
+    if (playing){
+      if (last != null) tSim += Math.min(.05, (t - last) / 1000) * speed;
+      last = t;
+      render();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function resize(){ sizeCanvas(cv, W, H); sizeCanvas(rc, CW, CH); sizeCanvas(mc, CW, CH); render(); drawR(); drawMode(); }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { drawR(); drawMode(); });
+  new MutationObserver(() => { drawR(); drawMode(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.addEventListener('resize', () => { clearTimeout(resize.t); resize.t = setTimeout(resize, 120); });
+
+  compute(); buildPath(); updateUI();
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
